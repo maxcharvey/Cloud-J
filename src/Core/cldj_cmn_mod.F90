@@ -114,8 +114,9 @@
       integer, parameter :: JVN_ = 200
 
       ! AN_ :  max # of FJX aerosols in layer (needs NDX for each)
+      ! +5 for NRHAER 5->6 (BrC bin, M. Harvey May 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter :: AN_=37
+      integer, parameter :: AN_=42
 #elif MODEL_STANDALONE
       integer, parameter :: AN_=25
 #endif
@@ -171,8 +172,9 @@
 
       ! A_   = dim = max no. of Aerosol Mie sets (input data) not including
       !        clouds and SSA
+      ! +7 for BrC entries 57-63 in FJX_scat-aer.dat (M. Harvey May 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter ::  A_=56
+      integer, parameter ::  A_=63
 #elif MODEL_STANDALONE
       integer, parameter ::  A_=40
 #endif
