@@ -114,9 +114,9 @@
       integer, parameter :: JVN_ = 200
 
       ! AN_ :  max # of FJX aerosols in layer (needs NDX for each)
-      ! +5 for NRHAER 5->6 (BrC bin, M. Harvey May 2026)
+      ! +10 for NRHAER 6->8 (NPBRCPOA N=7, WTC N=8, M. Harvey May 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter :: AN_=42
+      integer, parameter :: AN_=52
 #elif MODEL_STANDALONE
       integer, parameter :: AN_=25
 #endif
