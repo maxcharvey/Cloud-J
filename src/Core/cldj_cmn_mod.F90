@@ -115,8 +115,9 @@
 
       ! AN_ :  max # of FJX aerosols in layer (needs NDX for each)
       ! +10 for NRHAER 6->8 (NPBRCPOA N=7, WTC N=8, M. Harvey May 2026)
+      ! +5 for NRHAER 8->9 (FSOAS N=9, M. Harvey Jun 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter :: AN_=52
+      integer, parameter :: AN_=57
 #elif MODEL_STANDALONE
       integer, parameter :: AN_=25
 #endif
