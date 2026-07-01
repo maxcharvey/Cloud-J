@@ -117,7 +117,7 @@
       ! +10 for NRHAER 6->8 (NPBRCPOA N=7, WTC N=8, M. Harvey May 2026)
       ! +5 for NRHAER 8->9 (FSOAS N=9, M. Harvey Jun 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter :: AN_=57
+      integer, parameter :: AN_=67
 #elif MODEL_STANDALONE
       integer, parameter :: AN_=25
 #endif
