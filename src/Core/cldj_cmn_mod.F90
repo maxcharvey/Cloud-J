@@ -174,8 +174,9 @@
       ! A_   = dim = max no. of Aerosol Mie sets (input data) not including
       !        clouds and SSA
       ! +7 for BrC entries 57-63 in FJX_scat-aer.dat (M. Harvey May 2026)
+      ! +5 for optional dry-DBRCPOA entries 64-68 (M. Harvey 21 Jul 2026)
 #ifdef MODEL_GEOSCHEM
-      integer, parameter ::  A_=63
+      integer, parameter ::  A_=68
 #elif MODEL_STANDALONE
       integer, parameter ::  A_=40
 #endif
