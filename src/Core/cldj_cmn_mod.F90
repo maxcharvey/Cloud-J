@@ -114,8 +114,9 @@
       integer, parameter :: JVN_ = 200
 
       ! AN_ :  max # of FJX aerosols in layer (needs NDX for each)
+      ! GEOS-Chem BrC: 10 cloud/dust + 11 aerosols * 5 RH + 2 stratosphere.
 #ifdef MODEL_GEOSCHEM
-      integer, parameter :: AN_=37
+      integer, parameter :: AN_=67
 #elif MODEL_STANDALONE
       integer, parameter :: AN_=25
 #endif
@@ -171,8 +172,10 @@
 
       ! A_   = dim = max no. of Aerosol Mie sets (input data) not including
       !        clouds and SSA
+      ! Optional dedicated BrC mapping: WB 64-68, PB 69-73, dry DB 74.
+      ! Capacity only: the organic-equivalence mapping remains available.
 #ifdef MODEL_GEOSCHEM
-      integer, parameter ::  A_=56
+      integer, parameter ::  A_=74
 #elif MODEL_STANDALONE
       integer, parameter ::  A_=40
 #endif
