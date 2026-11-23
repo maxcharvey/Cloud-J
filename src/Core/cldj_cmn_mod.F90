@@ -170,14 +170,16 @@
       integer, parameter ::  X_=72
 #endif
 
-      ! A_   = dim = max no. of Aerosol Mie sets (input data) not including
-      !        clouds and SSA
-      ! Optional dedicated BrC mapping: WB 64-68, PB 69-73, dry DB 74.
-      ! Capacity only: the organic-equivalence mapping remains available.
+      ! Regular aerosol Mie indices end before the GEOMIP index range.
+      ! RD_MIE allocates the table to the number of records in the input.
+      integer, parameter :: MAX_REGULAR_MIE_INDEX = 999
+
+      ! Legacy host workspace extent. GEOS-Chem PhotContainer still imports
+      ! A_ for its placeholder AOD arrays. RD_MIE and OPTICA use NAA instead.
 #ifdef MODEL_GEOSCHEM
-      integer, parameter ::  A_=74
+      integer, parameter :: A_ = 74
 #elif MODEL_STANDALONE
-      integer, parameter ::  A_=40
+      integer, parameter :: A_ = 40
 #endif
 
       ! SSA_ & GGA_ = dim = no. of strat sulfate aerosol types (input data)
@@ -296,28 +298,28 @@
 !------------------------------------------------------------------------------
 
       ! TITLAA: Aerosol Mie Titles
-      character*12  TITLAA(A_)
+      character(len=12), allocatable :: TITLAA(:)
 
       ! QAA: Aerosol scattering phase functions
-      real*8  QAA(5,A_)
+      real*8, allocatable :: QAA(:,:)
 
       ! WAA: 5 Wavelengths for the supplied phase functions
-      real*8  WAA(5,A_)
+      real*8, allocatable :: WAA(:,:)
 
       ! PAA: Phase function: first 8 terms of expansion
-      real*8  PAA(8,5,A_)
+      real*8, allocatable :: PAA(:,:,:)
 
       ! RAA: Effective radius associated with aerosol type
-      real*8  RAA(A_)
+      real*8, allocatable :: RAA(:)
 
       ! SAA: Single scattering albedo
-      real*8  SAA(5,A_)
+      real*8, allocatable :: SAA(:,:)
 
       ! DAA: density (g/cm^3)
-      real*8  DAA(A_)
+      real*8, allocatable :: DAA(:)
 
       ! NAA: Number of categories for scattering phase functions
-      integer NAA
+      integer :: NAA = 0
 
 !------------------------------------------------------------------------------
 ! Variables in file 'FJX_scat-cld.dat' (RD_CLD)  ***major update for v75

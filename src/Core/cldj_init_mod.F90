@@ -750,66 +750,94 @@
       character(len=255)  :: thisloc
       logical, intent(in) :: AMIROOT
       integer, intent(in) :: NUN
-      character(*), intent(in) ::  NAMFIL
-      integer, intent(out)     :: RC
+      character(*), intent(in) :: NAMFIL
+      integer, intent(out) :: RC
 
-      integer  I, J, K , JAA
-      character*120 TITLE0
-      character(len=120) errMsg
-! TITLAA: Title for scat data NEEDS to be in COMMON
-!      character*12 TITLAA(A_) 
-      Character*12 TITLAAJ
-      real*8   RAAJ, DAAJ
+      integer :: I, J, K, JAA, pass, records, allocation_status
+      character(len=120) :: TITLE0
+      character(len=12) :: TITLAAJ
+      real*8 :: RAAJ, DAAJ, wavelengths(5), extinction(5), albedo(5), phase(8,5)
+      character(len=12), allocatable :: titles(:)
+      real*8, allocatable :: radii(:), densities(:), wave_table(:,:)
+      real*8, allocatable :: q_table(:,:), ssa_table(:,:), phase_table(:,:,:)
 
       thisloc = ' -> at RD_MIE in module cldj_init_mod.F90'
-      rc = CLDJ_SUCCESS
-
+      RC = CLDJ_SUCCESS
       if (AMIROOT) write(6,'(i5,a)') NUN,trim(NAMFIL)
 
-      open (NUN,FILE=NAMFIL,status='old',form='formatted',err=4)
+      open (NUN,FILE=NAMFIL,status='old',action='read',form='formatted',err=4)
 
-      read (NUN,'(a120)',err=3,end=3) TITLE0
-
-      if (AMIROOT) write(6,'(a)') adjustl(trim(TITLE0))
-      read (NUN,*,err=3,end=3)
-      read (NUN,*,err=3,end=3)
-      NAA = 0
-      do J = 1, A_
-         ! Change width of RAAJ and DAAJ from 6 to 7 to accomodate larger vals
-         ! (ewl, 2/27/23)
-         !read (NUN,'(i4,1x,a12,1x,2f6.3,1x,a120)',err=4) &
-         read (NUN,'(i4,1x,a12,1x,2f7.3,1x,a120)',err=3,end=2) &
-              JAA,TITLAAJ,RAAJ,DAAJ,TITLE0
-         if (JAA.le.0) goto 2
-         TITLAA(J) = TITLAAJ
-         RAA(J) = RAAJ
-         DAA(J) = DAAJ
-         do K = 1, 5
-            ! Change width of QAA from 7 to 9, and each PAA from 6 to 7
-            ! to accomodate larger values (ewl, 2/27/23)
-            !read (NUN,'(f4.0,f7.4,f7.4,7f6.3)',err=4) &
-            read (NUN,'(f4.0,f9.4,f7.4,7f7.3)',err=3,end=3) &
-                 WAA(K,J),QAA(K,J),SAA(K,J),(PAA(I,K,J),I=2,8)
-            PAA(1,K,J) = 1.d0
+      ! Count complete records first. Populate temporary tables on the second
+      ! pass so a failed read leaves the previously loaded table intact.
+      records = 0
+      do pass = 1, 2
+         read (NUN,'(a120)',err=3,end=3) TITLE0
+         if (pass == 1 .and. AMIROOT) write(6,'(a)') adjustl(trim(TITLE0))
+         read (NUN,*,err=3,end=3)
+         read (NUN,*,err=3,end=3)
+         J = 0
+         do
+            read (NUN,'(i4,1x,a12,1x,2f7.3,1x,a120)',err=3,end=2) &
+                 JAA,TITLAAJ,RAAJ,DAAJ,TITLE0
+            if (JAA <= 0) exit
+            if (J == MAX_REGULAR_MIE_INDEX) then
+               close(NUN)
+               call CLOUDJ_ERROR('Aerosol table exceeds the regular aerosol index range (3-999)', thisloc, RC)
+               return
+            endif
+            J = J + 1
+            do K = 1, 5
+               read (NUN,'(f4.0,f9.4,f7.4,7f7.3)',err=3,end=3) &
+                    wavelengths(K),extinction(K),albedo(K),(phase(I,K),I=2,8)
+               phase(1,K) = 1.d0
+            enddo
+            if (pass == 2) then
+               if (J > records) goto 5
+               titles(J) = TITLAAJ
+               radii(J) = RAAJ
+               densities(J) = DAAJ
+               wave_table(:,J) = wavelengths
+               q_table(:,J) = extinction
+               ssa_table(:,J) = albedo
+               phase_table(:,:,J) = phase
+               if (AMIROOT) write(6,'(i5,1x,a12,1x,7f9.3,1x,a)') &
+                     J,TITLAAJ,RAAJ,DAAJ,extinction,trim(TITLE0)
+            endif
          enddo
-         NAA = J
-         if (AMIROOT) write(6,'(i5,1x,a12,1x,7f9.3,1x,a)')   &
-               J,TITLAAJ,RAAJ,DAAJ,(QAA(K,J),K=1,5),trim(TITLE0)
+    2    continue
+         if (pass == 1) then
+            records = J
+            allocate(titles(records), radii(records), densities(records), &
+                     wave_table(5,records), q_table(5,records), ssa_table(5,records), &
+                     phase_table(8,5,records), stat=allocation_status)
+            if (allocation_status /= 0) then
+               close(NUN)
+               call CLOUDJ_ERROR('Unable to allocate aerosol scattering table', thisloc, RC)
+               return
+            endif
+            rewind(NUN,err=3)
+         else if (J /= records) then
+            goto 5
+         endif
       enddo
 
-      ! Read one extra index to distinguish a full table from overflow.
-      read (NUN,'(i4)',err=3,end=2) JAA
-      if (JAA.gt.0) then
-         write(errMsg,'(a,i0,a)') 'Aerosol table exceeds the compiled capacity of ', A_, ' records'
-         call CLOUDJ_ERROR(trim(errMsg), thisloc, rc)
-      endif
-
-    2 close(NUN)
+      close(NUN,err=4)
+      call move_alloc(titles, TITLAA)
+      call move_alloc(radii, RAA)
+      call move_alloc(densities, DAA)
+      call move_alloc(wave_table, WAA)
+      call move_alloc(q_table, QAA)
+      call move_alloc(ssa_table, SAA)
+      call move_alloc(phase_table, PAA)
+      NAA = records
       return
 
     3 close(NUN)
-    4 continue
-      call CLOUDJ_ERROR('Error in read', thisloc, rc)
+    4 call CLOUDJ_ERROR('Error reading aerosol scattering table: '//trim(NAMFIL), thisloc, RC)
+      return
+
+    5 close(NUN)
+      call CLOUDJ_ERROR('Aerosol scattering table record count changed during initialization', thisloc, RC)
 
       END SUBROUTINE RD_MIE
 

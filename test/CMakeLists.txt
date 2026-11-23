@@ -15,3 +15,18 @@ else()
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/bin
   )
 endif()
+
+if(NOT CLOUDJ_EXTERNAL_CONFIG)
+  add_executable(cloudj_aerosol_reader_test aerosol_reader.F90)
+  target_link_libraries(cloudj_aerosol_reader_test PRIVATE CloudJ_Core)
+  set(aerosol_reader_tables "${PROJECT_BINARY_DIR}/test/aerosol_reader/tables")
+  add_test(NAME PrepareAerosolReaderTables
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${PROJECT_SOURCE_DIR}/tables" "${aerosol_reader_tables}"
+  )
+  set_tests_properties(PrepareAerosolReaderTables PROPERTIES FIXTURES_SETUP AerosolReaderTables)
+  add_test(NAME AerosolReader
+    COMMAND cloudj_aerosol_reader_test "${PROJECT_SOURCE_DIR}/tables" "${aerosol_reader_tables}"
+  )
+  set_tests_properties(AerosolReader PROPERTIES FIXTURES_REQUIRED AerosolReaderTables)
+endif()
