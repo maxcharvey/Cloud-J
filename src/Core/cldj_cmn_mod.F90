@@ -174,6 +174,14 @@
       ! RD_MIE allocates the table to the number of records in the input.
       integer, parameter :: MAX_REGULAR_MIE_INDEX = 999
 
+      ! Legacy host workspace extent. GEOS-Chem PhotContainer still imports
+      ! A_ for its placeholder AOD arrays. RD_MIE and OPTICA use NAA instead.
+#ifdef MODEL_GEOSCHEM
+      integer, parameter :: A_ = 74
+#elif MODEL_STANDALONE
+      integer, parameter :: A_ = 40
+#endif
+
       ! SSA_ & GGA_ = dim = no. of strat sulfate aerosol types (input data)
       integer, parameter ::  SSA_=18, GGA_=15
 
