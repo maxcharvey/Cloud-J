@@ -755,6 +755,7 @@
 
       integer  I, J, K , JAA
       character*120 TITLE0
+      character(len=120) errMsg
 ! TITLAA: Title for scat data NEEDS to be in COMMON
 !      character*12 TITLAA(A_) 
       Character*12 TITLAAJ
@@ -767,45 +768,48 @@
 
       open (NUN,FILE=NAMFIL,status='old',form='formatted',err=4)
 
-      read (NUN,'(a120)',err=4) TITLE0
+      read (NUN,'(a120)',err=3,end=3) TITLE0
 
       if (AMIROOT) write(6,'(a)') adjustl(trim(TITLE0))
-      read (NUN,*)
-      read (NUN,*)
+      read (NUN,*,err=3,end=3)
+      read (NUN,*,err=3,end=3)
+      NAA = 0
       do J = 1, A_
          ! Change width of RAAJ and DAAJ from 6 to 7 to accomodate larger vals
          ! (ewl, 2/27/23)
          !read (NUN,'(i4,1x,a12,1x,2f6.3,1x,a120)',err=4) &
-         read (NUN,'(i4,1x,a12,1x,2f7.3,1x,a120)',err=4) &
+         read (NUN,'(i4,1x,a12,1x,2f7.3,1x,a120)',err=3,end=2) &
               JAA,TITLAAJ,RAAJ,DAAJ,TITLE0
-         if (JAA.gt.0) then
-            TITLAA(J) = TITLAAJ
-            RAA(J) = RAAJ
-            DAA(J) = DAAJ
-            do K = 1, 5
-               ! Change width of QAA from 7 to 9, and each PAA from 6 to 7
-               ! to accomodate larger values (ewl, 2/27/23)
-               !read (NUN,'(f4.0,f7.4,f7.4,7f6.3)',err=4) &
-               read (NUN,'(f4.0,f9.4,f7.4,7f7.3)',err=4) &
-                    WAA(K,J),QAA(K,J),SAA(K,J),(PAA(I,K,J),I=2,8)
-               PAA(1,K,J) = 1.d0
-            enddo
-            NAA = J
-            if (AMIROOT) write(6,'(i5,1x,a12,1x,7f9.3,1x,a)')   &
-                  J,TITLAAJ,RAAJ,DAAJ,(QAA(K,J),K=1,5),trim(TITLE0)
-         else
-            goto 2
-         endif
+         if (JAA.le.0) goto 2
+         TITLAA(J) = TITLAAJ
+         RAA(J) = RAAJ
+         DAA(J) = DAAJ
+         do K = 1, 5
+            ! Change width of QAA from 7 to 9, and each PAA from 6 to 7
+            ! to accomodate larger values (ewl, 2/27/23)
+            !read (NUN,'(f4.0,f7.4,f7.4,7f6.3)',err=4) &
+            read (NUN,'(f4.0,f9.4,f7.4,7f7.3)',err=3,end=3) &
+                 WAA(K,J),QAA(K,J),SAA(K,J),(PAA(I,K,J),I=2,8)
+            PAA(1,K,J) = 1.d0
+         enddo
+         NAA = J
+         if (AMIROOT) write(6,'(i5,1x,a12,1x,7f9.3,1x,a)')   &
+               J,TITLAAJ,RAAJ,DAAJ,(QAA(K,J),K=1,5),trim(TITLE0)
       enddo
-      goto 2
 
-    4 continue
-      call CLOUDJ_ERROR('Error in read', thisloc, rc)
+      ! Read one extra index to distinguish a full table from overflow.
+      read (NUN,'(i4)',err=3,end=2) JAA
+      if (JAA.gt.0) then
+         write(errMsg,'(a,i0,a)') 'Aerosol table exceeds the compiled capacity of ', A_, ' records'
+         call CLOUDJ_ERROR(trim(errMsg), thisloc, rc)
+      endif
+
+    2 close(NUN)
       return
 
-    2 continue
-
-      close(NUN)
+    3 close(NUN)
+    4 continue
+      call CLOUDJ_ERROR('Error in read', thisloc, rc)
 
       END SUBROUTINE RD_MIE
 
