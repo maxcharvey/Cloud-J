@@ -421,8 +421,9 @@ MODULE CLDJ_FJX_SUB_MOD
             NAER = NDXAER(L,M)
             PATH = AERSP(L,M)
             if (PATH .gt. 0.d0) then
-               if (NAER.gt.2 .and. NAER.lt.1000) then
+               if (NAER.gt.2 .and. NAER.le.MAX_REGULAR_MIE_INDEX) then
                   call OPTICA (OPTX,SSALB,SSLEG, PATH,RH, NAER,RC)
+                  if (RC /= CLDJ_SUCCESS) return
 
                   do K = 1,S_
                      OD(K,L)  = OD(K,L)  + OPTX(K)
